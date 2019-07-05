@@ -4,7 +4,7 @@ namespace ConsoleScraper
 {
     public class Selector
     {
-        public Selector(string _Id, string _Type, List<Selector> _ParentSelectors, string _Element, string _Regex, string _Multiple, string _Delay)
+        public Selector(string _Id, string _Type, List<string> _ParentSelectors, string _Element, string _Regex, string _Multiple, string _Delay)
         {
             this.Id = _Id;
             this.Type = _Type;
@@ -19,7 +19,9 @@ namespace ConsoleScraper
 
         public string Type { get; set; }
 
-        public List<Selector> ParentSelectors { get; set; }
+        public IList<string> ParentSelectors { get; set; } = new List<string>();
+
+        public IList<string> Childrens { get; set; } = new List<string>();
 
         public string Element { get; set; }
 

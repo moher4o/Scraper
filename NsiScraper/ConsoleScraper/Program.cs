@@ -14,6 +14,9 @@ namespace ConsoleScraper
 {
     class Program
     {
+
+
+
         static void Main(string[] args)
         {
             MainAsync(args).ConfigureAwait(false).GetAwaiter().GetResult();
@@ -64,6 +67,9 @@ namespace ConsoleScraper
 
         async static Task MainAsync(string[] args)
         {
+            var sitemap = new Dictionary<string, Selector>();
+            var addedSelectors = new HashSet<string>();
+            sitemap.Add("_root", new Selector("_root", null, null, null, null, null, null));
             //Console.WriteLine("Въведете името на файла съдуржащ Json:");
             //var fileWithJson = Console.ReadLine();
             var fileWithJson = "po4ivkaSitemap.txt";
@@ -77,24 +83,47 @@ namespace ConsoleScraper
                 await stream.ReadAsync(imagen, 0, (int)stream.Length);
                 string result = System.Text.Encoding.UTF8.GetString(imagen);
                 var resource = JObject.Parse(result);
-                var sitemap = Path.Combine(globalPath, "sitemap.txt");
-                using (var sitemapStream = new FileStream(sitemap, FileMode.Create, FileAccess.Write))
+                var sitemapFile = Path.Combine(globalPath, "sitemap.txt");
+                using (var sitemapStream = new FileStream(sitemapFile, FileMode.Create, FileAccess.Write))
                 {
                     StreamWriter sitemapWriter = new StreamWriter(sitemapStream);
                     sitemapWriter.BaseStream.Seek(0, SeekOrigin.End);
-                    
+
 
 
                     foreach (var property in resource.Properties())
                     {
                         Console.WriteLine("{0} - {1}", property.Name, property.Value);
-                        await sitemapWriter.WriteLineAsync("{"+ property.Name+"} - {"+property.Value+"}");
+                        await sitemapWriter.WriteLineAsync("{" + property.Name + "} - {" + property.Value + "}");
 
                         if (property.Name == "selectors")
                         {
                             foreach (var element in property.Value)
                             {
-                                Console.WriteLine("1");
+                                List<string> parents = new List<string>();
+                                foreach (var parent in element["parentSelectors"])
+                                {
+                                    string parentString = parent.ToString();
+                                    parents.Add(parentString);
+
+                                    sitemap[parentString].Childrens.Add(element["id"].ToString());  //_root и pagination ги няма в речника. 
+                                   
+                                }
+                                if (!sitemap.ContainsKey(element["id"].ToString()))
+                                {
+                                    string regex;
+                                    if (element.Contains("regex"))
+                                    {
+                                        regex = element["regex"].ToString();
+                                    }
+                                    regex = null;
+                                    var id = element["id"].ToString();
+                                    var type = element["type"].ToString();
+                                    var htmlElement = element["selector"].ToString();
+                                    var multiple = element["multiple"].ToString();
+                                    var delay = element["delay"].ToString();
+                                    sitemap.Add(id, new Selector(id, type, parents, htmlElement, regex, multiple, delay));
+                                }
                             }
                         }
 
@@ -157,10 +186,11 @@ namespace ConsoleScraper
                             //Console.ReadLine();
 
                         }
-                        //Console.WriteLine("{0} - {1}", property.Name, property.Value);
+                        
 
 
                     }
+                    Console.WriteLine("done");
                 }
             }
 
